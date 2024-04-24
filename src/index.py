@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 import os
 import logging
-from handlers import fallback_command
+from handlers import fallback_command, write
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -12,19 +12,16 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(f'Hello {update.effective_user.first_name}')
-
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text('TODO - Show all commands')
 
 def main():
     TG_TOKEN = os.environ.get("TG_TOKEN")
 
     app = ApplicationBuilder().token(TG_TOKEN).build()
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), echo))
-    app.add_handler(CommandHandler("hello", hello))
-
+    app.add_handler(CommandHandler("help", help))
+    app.add_handler(write.handler)
+# 
     # Fallback
     app.add_handler(MessageHandler(filters.COMMAND, fallback_command.handler))
     app.run_polling()
