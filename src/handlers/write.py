@@ -15,14 +15,10 @@ from telegram.ext import (
 )
 from warnings import filterwarnings
 from telegram.warnings import PTBUserWarning
+from classes import db_context_class
 import logging
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 logger = logging.getLogger(__name__)
-
-# https://docs.python-telegram-bot.org/en/v21.1.1/examples.conversationbot.html
-
-# TODO - Save to DynamoDB
-# TODO - Loading + error state
 
 MESSAGE_KEY, MESSAGE_VALUE = range(2)
 cancel_button_ui = [[InlineKeyboardButton("Cancel", callback_data="0")]]
@@ -78,15 +74,27 @@ async def message_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     """Stores the info about the user and ends the conversation."""
     # UI
     await edit_last_message(context, f"MESSAGE: {update.message.text}")
-    await update.message.reply_text("Thank you! Your message has been saved.")
+    current_message = await update.message.reply_text("Processing...")
 
     # State
     context.user_data["message_value"] = update.message.text
 
-    # Logging
+    # API call
     user = update.message.from_user
-    logger.info("Message saved by %s under tag %s: %s", user.full_name, context.user_data["message_key"], 
-    context.user_data["message_value"])
+    dynamodb_client = db_context_class.DbContextClass()
+    try:
+        dynamodb_client.write(str(user.id), context.user_data["message_key"], context.user_data["message_value"])
+        await current_message.edit_text("Thank you! Your message has been saved.")
+        logger.info(
+            "Message saved by user %i: '%s - %s'", 
+            user.id, 
+            context.user_data["message_key"], 
+            context.user_data["message_value"]
+        )
+
+    except Exception as e:
+        await current_message.edit_text("Something went wrong.")
+        logger.error(str(e))
 
     # State cleanup
     cleanup_state(context)

@@ -11,7 +11,7 @@ class DbContextClass:
         )
         self.table_name = os.environ.get('DYNAMODB_TABLE_NAME')
 
-    def write(self, userId, userMessageKey, userMessageValue):
+    def write(self, userId: str, userMessageKey: str, userMessageValue: str):
         self.dynamodb_client.put_item(
             TableName=self.table_name,
             Item={
