@@ -1,5 +1,7 @@
 import boto3
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 class DbContextClass:
     def __init__(self):
@@ -22,13 +24,18 @@ class DbContextClass:
         )
 
     def get(self, userId: str, userMessageKey: str):
-        self.dynamodb_client.get_item(
+        resp = self.dynamodb_client.get_item(
             TableName=self.table_name,
             Key={
                 'UserId': {'S': userId},
                 'UserMessageKey': {'S': userMessageKey}
             }
         )
+
+        if 'Item' in resp:
+            return resp['Item']['UserMessageValue']['S']
+        else:
+            return None
 
     def delete(self, userId: str, userMessageKey: str):
         self.dynamodb_client.delete_item(
