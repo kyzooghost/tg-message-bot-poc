@@ -20,3 +20,21 @@ class DbContextClass:
                 'UserMessageValue': {'S': userMessageValue}
             }
         )
+
+    def get(self, userId: str, userMessageKey: str):
+        self.dynamodb_client.get_item(
+            TableName=self.table_name,
+            Key={
+                'UserId': {'S': userId},
+                'UserMessageKey': {'S': userMessageKey}
+            }
+        )
+
+    def delete(self, userId: str, userMessageKey: str):
+        self.dynamodb_client.delete_item(
+            TableName=self.table_name,
+            Key={
+                'UserId': {'S': userId},
+                'UserMessageKey': {'S': userMessageKey}
+            }
+        )

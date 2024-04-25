@@ -1,8 +1,13 @@
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ConversationHandler
 import os
 import logging
-from handlers import fallback_command, write
+from handlers import fallback, help, start, cancel
+from handlers.actions import (
+    write as write_action
+)
+from conversation_states import SELECTING_ACTION, LIST, WRITE, GET, UPDATE, DELETE
+
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -12,18 +17,25 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text('TODO - Show all commands')
+# https://docs.python-telegram-bot.org/en/stable/examples.nestedconversationbot.html
 
 def main():
     TG_TOKEN = os.environ.get("TG_TOKEN")
-
     app = ApplicationBuilder().token(TG_TOKEN).build()
-    app.add_handler(CommandHandler("help", help))
-    app.add_handler(write.handler)
-# 
-    # Fallback
-    app.add_handler(MessageHandler(filters.COMMAND, fallback_command.handler))
+
+    root_conversation = ConversationHandler(
+        entry_points=[CommandHandler("start", start.handler)],
+        states={
+            SELECTING_ACTION: [
+                write_action.handler
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel.handler)],
+    )
+    app.add_handler(root_conversation)
+
+    app.add_handler(CommandHandler("help", help.handler))
+    app.add_handler(MessageHandler(filters.COMMAND, fallback.handler))
     app.run_polling()
 
 if __name__ == '__main__':

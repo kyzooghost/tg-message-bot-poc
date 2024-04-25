@@ -16,6 +16,7 @@ from telegram.ext import (
 from warnings import filterwarnings
 from telegram.warnings import PTBUserWarning
 from classes import db_context_class
+from conversation_states import WRITE
 import logging
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 logger = logging.getLogger(__name__)
@@ -44,9 +45,10 @@ def cleanup_state(context: ContextTypes.DEFAULT_TYPE):
 
 async def write(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Starts the conversation - ask to input a message key."""
+    await update.callback_query.answer()
 
     # UI
-    reply_message = await update.message.reply_text(
+    reply_message = await update.callback_query.edit_message_text(
         "Hi! I will save your messages. Please enter a message tag:",
         reply_markup=InlineKeyboardMarkup(cancel_button_ui)
     )
@@ -132,7 +134,8 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return ConversationHandler.END
 
 handler = ConversationHandler(
-    entry_points=[CommandHandler("write", write)],
+    # entry_points=[CommandHandler("write", write)],
+    entry_points=[CallbackQueryHandler(write, pattern="^" + str(WRITE) + "$")],
     states={
         MESSAGE_KEY: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, message_key),
