@@ -16,7 +16,8 @@ from telegram.ext import (
 from warnings import filterwarnings
 from telegram.warnings import PTBUserWarning
 from classes import db_context_class
-from conversation_states import WRITE
+from conversation_states import SELECTING_ACTION, WRITE
+from ui import start_menu
 import logging
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 logger = logging.getLogger(__name__)
@@ -106,7 +107,7 @@ async def cancel_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     """Cancel"""
     # UI
     query = update.callback_query
-    await query.delete_message()
+    # await query.delete_message()
 
     # Logging
     user = query.from_user
@@ -115,9 +116,11 @@ async def cancel_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     # State cleanup
     await query.answer()
     cleanup_state(context)
+
+    await query.edit_message_text(start_menu.text, reply_markup=start_menu.reply_markup)
     return ConversationHandler.END
 
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def cancel_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Cancels and ends the conversation."""
     # UI
     await edit_last_message(context)
@@ -146,5 +149,9 @@ handler = ConversationHandler(
             CallbackQueryHandler(cancel_button)
         ],
     },
-    fallbacks=[CommandHandler("cancel", cancel)]
+    fallbacks=[CommandHandler("cancel", cancel_fallback)],
+    map_to_parent={
+        # Return to top level menu
+        ConversationHandler.END: SELECTING_ACTION,
+    },
 )

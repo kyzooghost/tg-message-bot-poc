@@ -8,7 +8,6 @@ from handlers.actions import (
 )
 from conversation_states import SELECTING_ACTION, LIST, WRITE, GET, UPDATE, DELETE
 
-
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -24,11 +23,11 @@ def main():
     app = ApplicationBuilder().token(TG_TOKEN).build()
 
     root_conversation = ConversationHandler(
-        entry_points=[CommandHandler("start", start.handler)],
+        entry_points=[CommandHandler("start", start.command_handler)],
         states={
             SELECTING_ACTION: [
                 write_action.handler
-            ],
+            ]
         },
         fallbacks=[CommandHandler("cancel", cancel.handler)],
     )

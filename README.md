@@ -11,5 +11,3 @@ Resoures
 - https://docs.python-telegram-bot.org/en/stable/telegram.at-tree.html
 - https://github.com/python-telegram-bot/python-telegram-bot/wiki/Introduction-to-the-API
 - https://core.telegram.org/bots/api#using-a-local-bot-api-server
-
-TODO - Commands as button, no manual writing of commands
