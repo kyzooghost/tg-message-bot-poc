@@ -4,6 +4,7 @@ import os
 import logging
 from handlers import fallback, help, start, cancel
 from handlers.actions import (
+    delete as delete_action,
     get as get_action,
     write as write_action
 )
@@ -28,7 +29,8 @@ def main():
         states={
             SELECTING_ACTION: [
                 get_action.handler,
-                write_action.handler
+                write_action.handler,
+                delete_action.handler
             ]
         },
         fallbacks=[CommandHandler("cancel", cancel.handler)],

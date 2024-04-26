@@ -1,11 +1,8 @@
 from telegram import (
-    ReplyKeyboardRemove, 
     Update, 
     InlineKeyboardMarkup,
-    Message
 )
 from telegram.ext import (
-    CommandHandler,
     ContextTypes,
     ConversationHandler,
     MessageHandler,
@@ -19,23 +16,13 @@ from conversation_states import SELECTING_ACTION, WRITE
 from ui import start_menu
 from ui.cancel_button import cancel_button_ui, cancel_button_handler
 from handlers.utils.cleanup_state import cleanup_state
+from handlers.utils.edit_last_message import edit_last_message
 import logging
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 logger = logging.getLogger(__name__)
 
 MESSAGE_KEY, MESSAGE_VALUE = range(2)
 user_data_keys = ["message_to_cleanup", "message_key", "message_value"]
-
-### Helper functions
-
-async def edit_last_message(context: ContextTypes.DEFAULT_TYPE, new_text: str = None):
-    message_to_cleanup: Message | None = context.user_data.get("message_to_cleanup", None)
-    if message_to_cleanup is not None:
-        await message_to_cleanup.edit_text(
-            message_to_cleanup.text if new_text == None else new_text,
-            reply_markup=None
-        )
-        context.user_data["message_to_cleanup"] = None
 
 ### Handler functions
 
@@ -103,36 +90,18 @@ async def message_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
 async def cancel_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return await cancel_button_handler(update, context, user_data_keys)
 
-async def cancel_fallback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Cancels and ends the conversation."""
-    # UI
-    await edit_last_message(context)
-    await update.message.reply_text(
-        "Bye!", reply_markup=ReplyKeyboardRemove()
-    )
-
-    # Logging
-    user = update.message.from_user
-    logger.info("User %s canceled saving a message.", user.full_name)
-
-    # State cleanup
-    cleanup_state(context, user_data_keys)
-    return ConversationHandler.END
-
 handler = ConversationHandler(
     # entry_points=[CommandHandler("write", write)],
     entry_points=[CallbackQueryHandler(write, pattern="^" + str(WRITE) + "$")],
     states={
         MESSAGE_KEY: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, message_key),
-            CallbackQueryHandler(cancel_button)
         ],
         MESSAGE_VALUE: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, message_value),
-            CallbackQueryHandler(cancel_button)
         ],
     },
-    fallbacks=[CommandHandler("cancel", cancel_fallback)],
+    fallbacks=[CallbackQueryHandler(cancel_button)],
     map_to_parent={
         # Return to top level menu
         ConversationHandler.END: SELECTING_ACTION,

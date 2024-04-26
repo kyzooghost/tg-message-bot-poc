@@ -1,5 +1,6 @@
 import boto3
 import os
+from typing import Union
 import logging
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class DbContextClass:
             }
         )
 
-    def get(self, userId: str, userMessageKey: str):
+    def get(self, userId: str, userMessageKey: str) -> Union[str, None]:
         resp = self.dynamodb_client.get_item(
             TableName=self.table_name,
             Key={
@@ -37,11 +38,18 @@ class DbContextClass:
         else:
             return None
 
-    def delete(self, userId: str, userMessageKey: str):
-        self.dynamodb_client.delete_item(
-            TableName=self.table_name,
-            Key={
-                'UserId': {'S': userId},
-                'UserMessageKey': {'S': userMessageKey}
-            }
-        )
+    # Return 'true' if item was deleted, 'false' if item not present
+    def delete(self, userId: str, userMessageKey: str) -> bool:
+        # Contrary to documentation, delete_item response does not provide any information on whether an item was deleted or not
+        item = self.get(userId, userMessageKey)
+        if item is None:
+            return False
+        else:
+            self.dynamodb_client.delete_item(
+                TableName=self.table_name,
+                Key={
+                    'UserId': {'S': userId},
+                    'UserMessageKey': {'S': userMessageKey}
+                }
+            )
+            return True
