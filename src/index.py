@@ -6,6 +6,7 @@ from handlers import fallback, help, start, cancel
 from handlers.actions import (
     delete as delete_action,
     get as get_action,
+    list as list_action,
     update as update_action,
     write as write_action
 )
@@ -31,6 +32,7 @@ def main():
             SELECTING_ACTION: [
                 delete_action.handler,
                 get_action.handler,
+                list_action.handler,
                 update_action.handler,
                 write_action.handler
             ]

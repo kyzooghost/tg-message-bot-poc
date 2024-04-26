@@ -1,6 +1,7 @@
 import boto3
 import os
-from typing import Union
+from typing import Union, List
+from classes.user_message_class import UserMessageClass
 import logging
 logger = logging.getLogger(__name__)
 
@@ -71,3 +72,20 @@ class DbContextClass:
                 }
             )
             return True
+        
+    def list(self, userId: str) -> List[UserMessageClass]:
+        resp = self.dynamodb_client.query(
+            TableName=self.table_name,
+            Select='SPECIFIC_ATTRIBUTES',
+            ProjectionExpression = "UserMessageKey, UserMessageValue",
+            ExpressionAttributeValues={
+                ':userId': {
+                    'S': userId,
+                },
+            },
+            KeyConditionExpression='UserId = :userId',
+        )
+
+        if resp['Count'] == 0: return []
+        messages = [UserMessageClass.from_dynamodb_query_item(item) for item in resp['Items']]
+        return messages

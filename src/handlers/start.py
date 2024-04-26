@@ -1,6 +1,6 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import ContextTypes
-from conversation_states import SELECTING_ACTION, LIST, WRITE, GET, UPDATE, DELETE
+from conversation_states import SELECTING_ACTION
 from ui import start_menu
 
 async def command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:

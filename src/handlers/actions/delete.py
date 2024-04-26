@@ -71,7 +71,6 @@ async def cancel_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     return await cancel_button_handler(update, context, user_data_keys)
 
 handler = ConversationHandler(
-    # entry_points=[CommandHandler("write", write)],
     entry_points=[CallbackQueryHandler(delete, pattern="^" + str(DELETE) + "$")],
     states={
         MESSAGE_KEY: [MessageHandler(filters.TEXT & ~filters.COMMAND, message_key)],
