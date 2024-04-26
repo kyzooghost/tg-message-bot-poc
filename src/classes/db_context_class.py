@@ -53,3 +53,21 @@ class DbContextClass:
                 }
             )
             return True
+        
+    # Return 'true' if item was deleted, 'false' if item not present
+    def update(self, userId: str, userMessageKey: str, userMessageValue: str) -> bool:
+        item = self.get(userId, userMessageKey)
+        if item is None:
+            return False
+        else:
+            self.dynamodb_client.update_item(
+                TableName=self.table_name,
+                Key={
+                    'UserId': {'S': userId},
+                    'UserMessageKey': {'S': userMessageKey},
+                },
+                AttributeUpdates={
+                    'UserMessageValue': {'Value': {'S': userMessageValue}}
+                }
+            )
+            return True

@@ -53,7 +53,7 @@ async def message_key(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     try: 
         item = dynamodb_client.get(str(user.id), update.message.text)
         if item is None:
-            await last_message.edit_text("No message retrieved")
+            await last_message.edit_text("Message not found.")
         else:
             await last_message.edit_text(f"Retrieved message: {item}")
     except Exception as e:

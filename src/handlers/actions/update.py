@@ -12,7 +12,7 @@ from telegram.ext import (
 from warnings import filterwarnings
 from telegram.warnings import PTBUserWarning
 from classes import db_context_class
-from conversation_states import SELECTING_ACTION, WRITE
+from conversation_states import SELECTING_ACTION, UPDATE
 from ui import start_menu
 from ui.cancel_button import cancel_button_ui, cancel_button_handler
 from handlers.utils.cleanup_state import cleanup_state
@@ -26,13 +26,13 @@ user_data_keys = ["message_to_cleanup", "message_key", "message_value"]
 
 ### Handler functions
 
-async def write(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def update(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Starts the conversation - ask to input a message key."""
     await update.callback_query.answer()
 
     # UI
     reply_message = await update.callback_query.edit_message_text(
-        "Hi! I will save your messages. Please enter a message tag:",
+        "Please enter the tag for the message you wish to update:",
         reply_markup=InlineKeyboardMarkup(cancel_button_ui)
     )
 
@@ -45,7 +45,7 @@ async def message_key(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     # UI
     await edit_last_message(context, f"TAG: {update.message.text}")
     reply_message = await update.message.reply_text(
-        "Please enter a message:",
+        "Please enter the updated message:",
         reply_markup=InlineKeyboardMarkup(cancel_button_ui)
     )
 
@@ -57,7 +57,7 @@ async def message_key(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 async def message_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # UI
-    await edit_last_message(context, f"MESSAGE: {update.message.text}")
+    last_message = await edit_last_message(context, f"NEW MESSAGE: {update.message.text}")
     current_message = await update.message.reply_text("Processing...")
 
     # State
@@ -67,15 +67,11 @@ async def message_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     user = update.message.from_user
     dynamodb_client = db_context_class.DbContextClass()
     try:
-        dynamodb_client.write(str(user.id), context.user_data["message_key"], context.user_data["message_value"])
-        await current_message.edit_text("Thank you! Your message has been saved.")
-        logger.info(
-            "Message saved by user %i: '%s - %s'", 
-            user.id, 
-            context.user_data["message_key"], 
-            context.user_data["message_value"]
-        )
-
+        is_update_done = dynamodb_client.update(str(user.id), context.user_data["message_key"], context.user_data["message_value"])
+        if is_update_done == True:
+            await current_message.edit_text("Updated message!")
+        else:
+            await current_message.edit_text("Message not found.")
     except Exception as e:
         await current_message.edit_text("Something went wrong.")
         logger.error(str(e))
@@ -90,7 +86,7 @@ async def cancel_button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     return await cancel_button_handler(update, context, user_data_keys)
 
 handler = ConversationHandler(
-    entry_points=[CallbackQueryHandler(write, pattern="^" + str(WRITE) + "$")],
+    entry_points=[CallbackQueryHandler(update, pattern="^" + str(UPDATE) + "$")],
     states={
         MESSAGE_KEY: [
             MessageHandler(filters.TEXT & ~filters.COMMAND, message_key),

@@ -6,6 +6,7 @@ from handlers import fallback, help, start, cancel
 from handlers.actions import (
     delete as delete_action,
     get as get_action,
+    update as update_action,
     write as write_action
 )
 from conversation_states import SELECTING_ACTION, LIST, WRITE, GET, UPDATE, DELETE
@@ -28,9 +29,10 @@ def main():
         entry_points=[CommandHandler("start", start.command_handler)],
         states={
             SELECTING_ACTION: [
+                delete_action.handler,
                 get_action.handler,
-                write_action.handler,
-                delete_action.handler
+                update_action.handler,
+                write_action.handler
             ]
         },
         fallbacks=[CommandHandler("cancel", cancel.handler)],
